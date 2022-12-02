@@ -5,19 +5,19 @@ import { ConfigService } from '@nestjs/config';
 export class AppConfigService {
   constructor(private configService: ConfigService) {}
 
-  name() {
+  get name() {
     return this.configService.get<string>('app.name');
   }
 
-  env() {
+  get env() {
     return this.configService.get<string>('app.env');
   }
 
-  url() {
+  get url() {
     return this.configService.get<string>('app.url');
   }
 
-  port() {
+  get port() {
     return Number(this.configService.get<string>('app.port'));
   }
 }
