@@ -34,6 +34,7 @@ export class AuthController {
     const {
       access_token,
       refresh_settings: { cookie, refresh_token, exp },
+      user,
     } = await this.authService.login(loginDto);
 
     this.authService.saveRefreshSession({
@@ -41,9 +42,11 @@ export class AuthController {
       ip: request.ip,
       ua: request.headers['user-agent'],
       exp,
+      user,
     });
 
     request.res.setHeader('Set-Cookie', cookie);
+
     return access_token;
   }
 }

@@ -65,6 +65,7 @@ export class AuthService {
     return {
       access_token,
       refresh_settings,
+      user,
     };
   }
 
@@ -87,7 +88,9 @@ export class AuthService {
     });
 
     const { exp } = this.jwtService.decode(refresh_token) as JwtPayload;
-    const cookie = `Refresh=${refresh_token}; HttpOnly; Path=/; Max-Age=${this.config.refresh_expires_in}`;
+    const cookieTime = new Date(exp * 1000).toUTCString();
+
+    const cookie = `Refresh=${refresh_token}; HttpOnly; Path=/; Max-Age=${cookieTime}`;
     return { refresh_token, cookie, exp };
   }
 
