@@ -1,4 +1,5 @@
 import { JwtConfigModule } from '@app/config/jwt/config.module';
+import { RefreshSessionModule } from '@app/models/refresh-session/refresh-session.module';
 import { UsersModule } from '@app/models/users/users.module';
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
@@ -8,7 +9,13 @@ import { AuthService } from './auth.service';
 import { JwtStrategy, RefreshStrategy } from './strategies';
 
 @Module({
-  imports: [UsersModule, JwtConfigModule, PassportModule, JwtModule],
+  imports: [
+    UsersModule,
+    JwtConfigModule,
+    PassportModule,
+    JwtModule,
+    RefreshSessionModule,
+  ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, RefreshStrategy],
 })

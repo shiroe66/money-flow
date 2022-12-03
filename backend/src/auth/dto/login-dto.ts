@@ -13,11 +13,6 @@ export class LoginDto {
   @MinLength(6)
   username: string;
 
-  @IsEmail()
-  @IsOptional()
-  @IsString()
-  email: string;
-
   @IsString()
   @IsNotEmpty()
   @Length(8, 20)

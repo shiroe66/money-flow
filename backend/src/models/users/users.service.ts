@@ -10,7 +10,10 @@ export class UsersService {
     @InjectRepository(User) private userRepository: Repository<User>,
   ) {}
 
-  async findOne(key: string, value: string): Promise<User> {
+  async findOne(
+    key: 'id' | 'username' | 'email',
+    value: string,
+  ): Promise<User> {
     const user = this.userRepository.findOne({ where: { [key]: value } });
     return user;
   }

@@ -5,9 +5,11 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Req,
   UseInterceptors,
   ValidationPipe,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login-dto';
 import { RegisterDto } from './dto/register-dto';
@@ -25,7 +27,23 @@ export class AuthController {
 
   @Post('signin')
   @HttpCode(HttpStatus.OK)
-  async login(@Body(ValidationPipe) loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  async login(
+    @Body(ValidationPipe) loginDto: LoginDto,
+    @Req() request: Request,
+  ) {
+    const {
+      access_token,
+      refresh_settings: { cookie, refresh_token, exp },
+    } = await this.authService.login(loginDto);
+
+    this.authService.saveRefreshSession({
+      refresh_token,
+      ip: request.ip,
+      ua: request.headers['user-agent'],
+      exp,
+    });
+
+    request.res.setHeader('Set-Cookie', cookie);
+    return access_token;
   }
 }

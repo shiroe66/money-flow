@@ -1,3 +1,4 @@
+import { RefreshSession } from '@app/models/refresh-session/entities/refresh-session.entity';
 import * as argon2 from 'argon2';
 import { Exclude } from 'class-transformer';
 import {
@@ -6,6 +7,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   Unique,
   UpdateDateColumn,
@@ -52,8 +54,15 @@ export class User extends BaseEntity {
   @Column({ type: 'varchar' })
   currency: string;
 
+  @OneToMany(() => RefreshSession, (refreshSession) => refreshSession.user)
+  refresh_sessions: RefreshSession[];
+
   @BeforeInsert()
   async hash() {
     this.password = await argon2.hash(this.password);
+  }
+
+  async validatePassword(password: string) {
+    return argon2.verify(this.password, password);
   }
 }
