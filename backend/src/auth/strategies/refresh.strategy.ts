@@ -1,8 +1,10 @@
 import { JwtConfigService } from '@app/config/jwt/config.service';
+import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Request } from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
+@Injectable()
 export class RefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
   constructor(private config: JwtConfigService) {
     super({
@@ -11,7 +13,7 @@ export class RefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
           return request?.cookies?.refresh;
         },
       ]),
-      secretOrKey: process.env.JWT_SECRET_REFRESH,
+      secretOrKey: config.refresh_secret,
       passReqToCallback: true,
     });
   }
