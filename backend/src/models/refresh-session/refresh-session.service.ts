@@ -12,7 +12,22 @@ export class RefreshSessionService {
   ) {}
 
   async create(session: Session) {
+    const [sessions, count] = await this.refreshSessionRepository.findAndCount({
+      where: { user: { id: session.user.id } },
+      order: { exp: 'ASC' },
+    });
+
+    if (count === 3) {
+      const [firstSession] = sessions;
+      await this.delete(firstSession.id);
+    }
+
     const data = this.refreshSessionRepository.create(session);
     return data.save();
+  }
+
+  async delete(id: string) {
+    const data = await this.refreshSessionRepository.delete(id);
+    return data;
   }
 }
