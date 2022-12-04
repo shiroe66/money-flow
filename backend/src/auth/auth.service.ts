@@ -46,7 +46,7 @@ export class AuthService {
     return this.userService.create(registerDto);
   }
 
-  async login(loginDto: LoginDto) {
+  async login(loginDto: LoginDto, { ip, ua }: Pick<Session, 'ip' | 'ua'>) {
     const user = await this.userService.findOne('username', loginDto.username);
 
     if (!user) {
@@ -60,12 +60,15 @@ export class AuthService {
     }
 
     const access_token = await this.generateAccessToken(user.id, user.email);
-    const refresh_settings = await this.generateRefreshToken(user.id);
+    const { cookie, exp, refresh_token } = await this.generateRefreshToken(
+      user.id,
+    );
+
+    await this.saveRefreshSession({ exp, refresh_token, ip, ua, user });
 
     return {
       access_token,
-      refresh_settings,
-      user,
+      cookie,
     };
   }
 

@@ -27,26 +27,14 @@ export class AuthController {
 
   @Post('signin')
   @HttpCode(HttpStatus.OK)
-  async login(
-    @Body(ValidationPipe) loginDto: LoginDto,
-    @Req() request: Request,
-  ) {
-    const {
-      access_token,
-      refresh_settings: { cookie, refresh_token, exp },
-      user,
-    } = await this.authService.login(loginDto);
-
-    this.authService.saveRefreshSession({
-      refresh_token,
+  async login(@Body(ValidationPipe) loginDto: LoginDto, @Req() request: Request) {
+    const session = {
       ip: request.ip,
       ua: request.headers['user-agent'],
-      exp,
-      user,
-    });
+    };
 
+    const { access_token, cookie } = await this.authService.login(loginDto, session);
     request.res.setHeader('Set-Cookie', cookie);
-
     return access_token;
   }
 }
