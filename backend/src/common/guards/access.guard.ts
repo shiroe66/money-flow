@@ -10,7 +10,7 @@ export class AccessGuard extends AuthGuard('jwt') {
     super();
   }
 
-  canActivate(ctx: ExecutionContext) {
+  canActivate(ctx: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
     const isPublic = this.reflector.get(IS_PUBLIC_KEY, ctx.getHandler());
 
     if (isPublic) {

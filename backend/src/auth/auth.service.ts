@@ -81,7 +81,7 @@ export class AuthService {
   }
 
   async generateRefreshToken(id: string) {
-    const payload = { sud: id };
+    const payload = { sub: id };
     const refresh_token = await this.jwtService.signAsync(payload, {
       secret: this.config.refresh_secret,
       expiresIn: this.config.refresh_expires_in,

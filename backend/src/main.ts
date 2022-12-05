@@ -2,10 +2,13 @@ import { AppModule } from '@app/app.module';
 import { AppConfigService } from '@app/config/app/config.service';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const appConfig: AppConfigService = app.get(AppConfigService);
+
+  app.use(cookieParser());
 
   const config = new DocumentBuilder()
     .setTitle('Accounting')
