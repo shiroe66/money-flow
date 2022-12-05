@@ -1,16 +1,17 @@
 import {
   ALREADY_EMAIL_EXIST,
   ALREADY_USERNAME_EXIST,
+  USER_NOT_FOUND,
 } from '@app/common/constants';
 import { JwtPayload, Session } from '@app/common/interface';
 import { JwtConfigService } from '@app/config/jwt/config.service';
-import { RefreshSession } from '@app/models/refresh-session/entities/refresh-session.entity';
 import { RefreshSessionService } from '@app/models/refresh-session/refresh-session.service';
 import { UsersService } from '@app/models/users/users.service';
 import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login-dto';
@@ -26,10 +27,7 @@ export class AuthService {
   ) {}
 
   async create(registerDto: RegisterDto) {
-    const findByEmail = await this.userService.findOne(
-      'email',
-      registerDto.email,
-    );
+    const findByEmail = await this.userService.findOne('email', registerDto.email);
     const findByUsername = await this.userService.findOne(
       'username',
       registerDto.username,
@@ -46,44 +44,43 @@ export class AuthService {
     return this.userService.create(registerDto);
   }
 
-  async login(loginDto: LoginDto, { ip, ua }: Pick<Session, 'ip' | 'ua'>) {
+  async login(loginDto: LoginDto) {
     const user = await this.userService.findOne('username', loginDto.username);
-
     if (!user) {
       throw new ForbiddenException();
     }
 
     const isValid = await user.validatePassword(loginDto.password);
-
     if (!isValid) {
       throw new ForbiddenException();
     }
 
-    const access_token = await this.generateAccessToken(user.id, user.email);
-    const { cookie, exp, refresh_token } = await this.generateRefreshToken(
-      user.id,
-    );
-
-    await this.saveRefreshSession({ exp, refresh_token, ip, ua, user });
-
-    return {
-      access_token,
-      cookie,
-    };
+    return user;
   }
 
-  private async generateAccessToken(id: string, email: string) {
+  async refresh() {}
+
+  async verify(payload: JwtPayload) {
+    const user = await this.userService.findOne('id', payload.sub);
+
+    if (!user) {
+      throw new UnauthorizedException(USER_NOT_FOUND);
+    }
+
+    return user;
+  }
+
+  async generateAccessToken(id: string, email: string) {
     const payload = { sub: id, email };
-    const token = await this.jwtService.signAsync(payload, {
+    const access_token = await this.jwtService.signAsync(payload, {
       secret: this.config.secret,
       expiresIn: this.config.expires_in,
     });
 
-    const { exp } = this.jwtService.decode(token) as JwtPayload;
-    return { token, exp };
+    return { access_token };
   }
 
-  private async generateRefreshToken(id: string) {
+  async generateRefreshToken(id: string) {
     const payload = { sud: id };
     const refresh_token = await this.jwtService.signAsync(payload, {
       secret: this.config.refresh_secret,
@@ -91,13 +88,10 @@ export class AuthService {
     });
 
     const { exp } = this.jwtService.decode(refresh_token) as JwtPayload;
-    const cookieTime = new Date(exp * 1000).toUTCString();
-
-    const cookie = `Refresh=${refresh_token}; HttpOnly; Path=/; Max-Age=${cookieTime}`;
-    return { refresh_token, cookie, exp };
+    return { refresh_token, exp };
   }
 
-  async saveRefreshSession(session: Session) {
+  private async saveRefreshSession(session: Session) {
     return this.refreshSessionService.create(session);
   }
 }

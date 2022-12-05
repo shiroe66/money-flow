@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RefreshSession } from './entities/refresh-session.entity';
+import * as argon2 from 'argon2';
 
 @Injectable()
 export class RefreshSessionService {
@@ -22,9 +23,16 @@ export class RefreshSessionService {
       await this.delete(firstSession.id);
     }
 
-    const data = this.refreshSessionRepository.create(session);
+    const hashed = await argon2.hash(session.refresh_token);
+
+    const data = this.refreshSessionRepository.create({
+      ...session,
+      refresh_token: hashed,
+    });
     return data.save();
   }
+
+  async verify(token: string) {}
 
   async delete(id: string) {
     const data = await this.refreshSessionRepository.delete(id);
