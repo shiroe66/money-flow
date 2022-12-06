@@ -1,6 +1,6 @@
 import { Public } from '@app/common/decorators/metadata/public.decorator';
 import { RefreshGuard } from '@app/common/guards';
-import { RefreshInterceptor } from '@app/common/interceptors';
+import { TokenInterceptor } from '@app/common/interceptors';
 import {
   Body,
   ClassSerializerInterceptor,
@@ -9,13 +9,10 @@ import {
   HttpCode,
   HttpStatus,
   Post,
-  Req,
-  Res,
   UseGuards,
   UseInterceptors,
   ValidationPipe,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login-dto';
 import { RegisterDto } from './dto/register-dto';
@@ -35,7 +32,7 @@ export class AuthController {
   @Post('signin')
   @HttpCode(HttpStatus.OK)
   @Public()
-  @UseInterceptors(RefreshInterceptor)
+  @UseInterceptors(TokenInterceptor)
   async login(@Body(ValidationPipe) loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }

@@ -1,14 +1,16 @@
 import {
   ALREADY_EMAIL_EXIST,
   ALREADY_USERNAME_EXIST,
+  USER_LOGIN_ERROR,
   USER_NOT_FOUND,
 } from '@app/common/constants';
-import { JwtPayload, Session } from '@app/common/interface';
+import { JwtPayload } from '@app/common/interface';
 import { JwtConfigService } from '@app/config/jwt/config.service';
 import { RefreshSessionService } from '@app/models/refresh-session/refresh-session.service';
+import { User } from '@app/models/users/entities/user.entity';
 import { UsersService } from '@app/models/users/users.service';
 import {
-  BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   UnauthorizedException,
@@ -16,6 +18,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login-dto';
 import { RegisterDto } from './dto/register-dto';
+import * as argon2 from 'argon2';
 
 @Injectable()
 export class AuthService {
@@ -34,11 +37,11 @@ export class AuthService {
     );
 
     if (findByEmail) {
-      throw new BadRequestException(ALREADY_EMAIL_EXIST);
+      throw new ConflictException(ALREADY_EMAIL_EXIST);
     }
 
     if (findByUsername) {
-      throw new BadRequestException(ALREADY_USERNAME_EXIST);
+      throw new ConflictException(ALREADY_USERNAME_EXIST);
     }
 
     return this.userService.create(registerDto);
@@ -47,12 +50,12 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const user = await this.userService.findOne('username', loginDto.username);
     if (!user) {
-      throw new ForbiddenException();
+      throw new ForbiddenException(USER_LOGIN_ERROR);
     }
 
     const isValid = await user.validatePassword(loginDto.password);
     if (!isValid) {
-      throw new ForbiddenException();
+      throw new ForbiddenException(USER_LOGIN_ERROR);
     }
 
     return user;
@@ -80,18 +83,16 @@ export class AuthService {
     return { access_token };
   }
 
-  async generateRefreshToken(id: string) {
-    const payload = { sub: id };
+  async generateRefreshToken(user: User) {
+    const payload = { sub: user.id };
     const refresh_token = await this.jwtService.signAsync(payload, {
       secret: this.config.refresh_secret,
       expiresIn: this.config.refresh_expires_in,
     });
 
     const { exp } = this.jwtService.decode(refresh_token) as JwtPayload;
-    return { refresh_token, exp };
-  }
+    await this.refreshSessionService.create({ exp, refresh_token, user });
 
-  private async saveRefreshSession(session: Session) {
-    return this.refreshSessionService.create(session);
+    return { refresh_token, exp };
   }
 }

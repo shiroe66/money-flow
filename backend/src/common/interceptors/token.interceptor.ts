@@ -10,7 +10,7 @@ import { Response } from 'express';
 import { map, Observable } from 'rxjs';
 
 @Injectable()
-export class RefreshInterceptor implements NestInterceptor {
+export class TokenInterceptor implements NestInterceptor {
   constructor(private authService: AuthService) {}
 
   intercept(
@@ -21,10 +21,7 @@ export class RefreshInterceptor implements NestInterceptor {
       map(async (user: User) => {
         const response = ctx.switchToHttp().getResponse<Response>();
 
-        const { refresh_token, exp } = await this.authService.generateRefreshToken(
-          user.id,
-        );
-
+        const { refresh_token, exp } = await this.authService.generateRefreshToken(user);
         const { access_token } = await this.authService.generateAccessToken(
           user.id,
           user.email,
