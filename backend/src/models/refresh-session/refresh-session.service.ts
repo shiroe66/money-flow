@@ -27,7 +27,22 @@ export class RefreshSessionService {
     return data.save();
   }
 
-  async verify(refreshToken: string, id: string) {}
+  // проверить работу с несколькими токенами
+  async verify(refreshToken: string, id: string) {
+    const sessions = await this.refreshSessionRepository.find({
+      where: { user: { id } },
+    });
+
+    for (const session of sessions) {
+      const isValid = await argon2.verify(session.refresh_token, refreshToken);
+
+      if (isValid) {
+        return session;
+      }
+    }
+
+    return null;
+  }
 
   async delete(id: string) {
     const data = await this.refreshSessionRepository.delete(id);

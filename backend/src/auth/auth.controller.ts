@@ -1,6 +1,8 @@
 import { Public } from '@app/common/decorators/metadata/public.decorator';
+import { GetUser } from '@app/common/decorators/requests';
 import { RefreshGuard } from '@app/common/guards';
 import { TokenInterceptor } from '@app/common/interceptors';
+import { User } from '@app/models/users/entities/user.entity';
 import {
   Body,
   ClassSerializerInterceptor,
@@ -40,7 +42,8 @@ export class AuthController {
   @Get('refresh')
   @HttpCode(HttpStatus.OK)
   @UseGuards(RefreshGuard)
-  async refresh() {
-    return this.authService.refresh();
+  @UseInterceptors(TokenInterceptor)
+  async refresh(@GetUser() user: User) {
+    return user;
   }
 }

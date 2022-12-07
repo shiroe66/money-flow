@@ -18,7 +18,6 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login-dto';
 import { RegisterDto } from './dto/register-dto';
-import * as argon2 from 'argon2';
 
 @Injectable()
 export class AuthService {
@@ -60,8 +59,6 @@ export class AuthService {
 
     return user;
   }
-
-  async refresh() {}
 
   async verify(payload: JwtPayload) {
     const user = await this.userService.findOne('id', payload.sub);
