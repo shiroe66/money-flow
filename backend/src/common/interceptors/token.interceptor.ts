@@ -31,7 +31,7 @@ export class TokenInterceptor implements NestInterceptor {
         response.cookie('refresh', refresh_token, {
           httpOnly: true,
           sameSite: true,
-          maxAge: exp,
+          expires: new Date(exp * 1000),
           secure: process.env.NODE_ENV === 'production',
         });
 

@@ -1,6 +1,6 @@
 import { Public } from '@app/common/decorators/metadata/public.decorator';
-import { GetUser } from '@app/common/decorators/requests';
-import { RefreshGuard } from '@app/common/guards';
+import { GetToken, GetUser } from '@app/common/decorators/requests';
+import { RefreshGuard } from '@app/common/guards/refresh.guard';
 import { TokenInterceptor } from '@app/common/interceptors';
 import { User } from '@app/models/users/entities/user.entity';
 import {
@@ -11,10 +11,12 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Res,
   UseGuards,
   UseInterceptors,
   ValidationPipe,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login-dto';
 import { RegisterDto } from './dto/register-dto';
@@ -42,8 +44,32 @@ export class AuthController {
   @Get('refresh')
   @HttpCode(HttpStatus.OK)
   @UseGuards(RefreshGuard)
-  @UseInterceptors(TokenInterceptor)
-  async refresh(@GetUser() user: User) {
-    return user;
+  async refresh(
+    @GetUser() user: User,
+    @GetToken('refresh') token: string,
+    @Res() response: Response,
+  ) {
+    const { exp } = await this.authService.decode(token);
+    const expirationTimestamp = (exp - 60) * 1000;
+    const currentTimestamp = new Date().getTime();
+
+    const { access_token } = await this.authService.generateAccessToken(
+      user.id,
+      user.email,
+    );
+    response.setHeader('Authorization', `Bearer ${access_token}`);
+
+    if (currentTimestamp >= expirationTimestamp) {
+      const { refresh_token, exp } = await this.authService.generateRefreshToken(user);
+
+      response.cookie('refresh', refresh_token, {
+        httpOnly: true,
+        sameSite: true,
+        expires: new Date(exp * 1000),
+        secure: process.env.NODE_ENV === 'production',
+      });
+    }
+
+    response.send();
   }
 }

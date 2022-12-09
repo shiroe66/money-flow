@@ -70,6 +70,11 @@ export class AuthService {
     return user;
   }
 
+  async decode(token: string) {
+    const decoded = this.jwtService.decode(token);
+    return decoded as JwtPayload;
+  }
+
   async generateAccessToken(id: string, email: string) {
     const payload = { sub: id, email };
     const access_token = await this.jwtService.signAsync(payload, {
@@ -87,7 +92,7 @@ export class AuthService {
       expiresIn: this.config.refresh_expires_in,
     });
 
-    const { exp } = this.jwtService.decode(refresh_token) as JwtPayload;
+    const { exp } = await this.decode(refresh_token);
     await this.refreshSessionService.create({ exp, refresh_token, user });
 
     return { refresh_token, exp };
